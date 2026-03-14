@@ -4,9 +4,9 @@ from shapely.geometry import Point
 from sqlalchemy import create_engine
 from datetime import datetime
 
-ais = pd.read_csv("ais_standardized.csv")
-weather = pd.read_csv("weather_standardized.csv")
-water = pd.read_csv("water_standardized.csv")
+ais = pd.read_csv("data/ais_standardized.csv")
+weather = pd.read_csv("data/weather_standardized.csv")
+water = pd.read_csv("data/water_standardized.csv")
 
 columns = [
 "source_id",
@@ -41,6 +41,8 @@ valid_df = final_pipeline_data[
 rejected_df = final_pipeline_data.drop(valid_df.index)
 
 rejected_df.to_csv("rejected_records.csv", index=False)
+
+valid_df = valid_df.copy()
 
 valid_df["geom"] = gpd.points_from_xy(
 valid_df["longitude"],
