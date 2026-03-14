@@ -1,0 +1,8 @@
+database:
+  host: localhost
+  database: marine_intelligence
+  user: postgres
+  password: admin@123
+
+paths:
+  signals_csv: data/signals.csv
