@@ -1,21 +1,24 @@
 database:
   host: localhost
-  database: marine_intelligence
+  port: 5432
+  name: marine_intelligence
   user: postgres
   password: admin@123
 
 paths:
-  signals_csv: data/signals.csv
+  ais_csv: data/ais_standardized.csv
+  weather_csv: data/weather_standardized.csv
+  water_csv: data/water_standardized.csv
 
 datasets:
   - name: ais_vessel_data
     source: AIS API
-    description: Vessel tracking signals from AIS
+    description: Vessel tracking signals from AIS transponders
 
   - name: weather_data
-    source: Weather API
-    description: Marine weather observations
+    source: Marine Weather API
+    description: Weather observations over ocean regions
 
   - name: hydrology_data
-    source: Ocean sensors
-    description: Ocean current and hydrology data
+    source: Ocean Sensor Network
+    description: Ocean current and water level measurements
