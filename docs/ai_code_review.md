@@ -1,21 +1,23 @@
 # AI Code Review
 
-The ingestion pipeline code was reviewed using an AI assistant to improve reliability and maintainability.
+The ingestion pipeline was reviewed using an AI assistant to check if the code could be improved.
 
 ## Suggestions from AI
 
-1. Add validation for latitude and longitude values.
-2. Remove hardcoded file paths from the code.
-3. Add logging for ingestion runs.
-4. Use configuration files for dataset paths.
+The AI assistant suggested a few improvements:
+
+1. Add validation checks for latitude and longitude values.
+2. Avoid using hardcoded file paths in the script.
+3. Add logging to track ingestion runs.
+4. Use a configuration file to manage dataset paths.
 
 ## Improvements Implemented
 
-The following improvements were applied to the ingestion pipeline:
+After reviewing the suggestions, the following changes were made:
 
-* Coordinate validation was added.
-* Hardcoded paths were removed.
-* A configuration-based approach was introduced.
-* Logging was added to track ingestion processes.
+* Validation was added to ensure latitude values are between **-90 and 90** and longitude values are between **-180 and 180**.
+* Hardcoded file paths were removed from the code.
+* Dataset paths were moved to a **configuration file (`config.yaml`)**.
+* Logging was added to record ingestion runs and track the number of processed records.
 
-These improvements help ensure that the ingestion pipeline is more reliable and easier to maintain.
+These changes make the ingestion pipeline easier to maintain and more reliable.
