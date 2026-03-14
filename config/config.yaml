@@ -6,3 +6,16 @@ database:
 
 paths:
   signals_csv: data/signals.csv
+
+datasets:
+  - name: ais_vessel_data
+    source: AIS API
+    description: Vessel tracking signals from AIS
+
+  - name: weather_data
+    source: Weather API
+    description: Marine weather observations
+
+  - name: hydrology_data
+    source: Ocean sensors
+    description: Ocean current and hydrology data
