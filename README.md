@@ -47,6 +47,34 @@ After ingestion, the database currently contains the following signals:
 | precipitation | 312          |
 | water_level   | 366          |
 
+---
+
+## Repository Structure
+
+marine-intelligence-signal-db
+│
+├── config/
+│   └── config.yaml
+│
+├── database_schema/
+│   └── schema.sql
+│
+├── docs/
+│   ├── ai_code_review.md
+│   ├── ai_schema_review.md
+│   └── data_authenticity.md
+│
+├── ingestion_pipeline/
+│   └── ingest_signals.py
+│
+├── notebooks/
+│   └── normalization.ipynb
+│
+├── signal_inventory.md
+├── README.md
+
+---
+
 ### Explanation
 
 The Marine Intelligence Signal Database currently stores signals from multiple maritime and environmental sources.
