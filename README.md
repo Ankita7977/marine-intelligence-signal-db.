@@ -51,6 +51,9 @@ After ingestion, the database currently contains the following signals:
 
 ## Repository Structure
 
+## Repository Structure
+
+```
 marine-intelligence-signal-db
 │
 ├── config/
@@ -71,7 +74,8 @@ marine-intelligence-signal-db
 │   └── normalization.ipynb
 │
 ├── signal_inventory.md
-├── README.md
+└── README.md
+```
 
 ---
 
