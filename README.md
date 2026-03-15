@@ -51,8 +51,6 @@ After ingestion, the database currently contains the following signals:
 
 ## Repository Structure
 
-## Repository Structure
-
 ```
 marine-intelligence-signal-db
 │
