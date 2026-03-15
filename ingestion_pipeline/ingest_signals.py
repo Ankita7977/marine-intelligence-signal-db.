@@ -21,7 +21,7 @@ db = config["database"]
 # -----------------------------------
 
 engine = create_engine(
-f"postgresql://{db['user']}:{db['password']}@{db['host']}:{db['port']}/{db['dbname']}"
+f"postgresql://{db['user']}:{db['password']}@{db['host']}:{db['port']}/{db['name']}"
 )
 
 
@@ -29,10 +29,9 @@ f"postgresql://{db['user']}:{db['password']}@{db['host']}:{db['port']}/{db['dbna
 # STEP 3 — Load Standardized Datasets
 # -----------------------------------
 
-ais = pd.read_csv("../data/ais_standardized.csv")
-weather = pd.read_csv("../data/weather_standardized.csv")
-water = pd.read_csv("../data/water_standardized.csv")
-
+ais = pd.read_csv(config["paths"]["ais_csv"])
+weather = pd.read_csv(config["paths"]["weather_csv"])
+water = pd.read_csv(config["paths"]["water_csv"])
 
 # -----------------------------------
 # STEP 4 — Normalize Schema
