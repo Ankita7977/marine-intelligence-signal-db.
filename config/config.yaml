@@ -11,14 +11,26 @@ paths:
   water_csv: data/water_standardized.csv
 
 datasets:
-  - name: ais_vessel_data
+  -dataset_id: AIS001
+    dataset_name: ais_vessel_data
     source: AIS API
-    description: Vessel tracking signals from AIS transponders
+    schema_version: v1
+    update_frequency: real_time
+    trust_level: high
+    ingestion_method: csv_import
 
-  - name: weather_data
+  - dataset_id: WTH001
+    dataset_name: weather_data
     source: Marine Weather API
-    description: Weather observations over ocean regions
+    schema_version: v1
+    update_frequency: daily
+    trust_level: medium
+    ingestion_method: csv_import
 
-  - name: hydrology_data
+  - dataset_id: HYD001
+    dataset_name: hydrology_data
     source: Ocean Sensor Network
-    description: Ocean current and water level measurements
+    schema_version: v1
+    update_frequency: daily
+    trust_level: medium
+    ingestion_method: csv_import
