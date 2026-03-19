@@ -143,3 +143,18 @@ Documentation of AI-assisted reviews is available in the `docs/` folder.
 * Python
 * Pandas
 * Geospatial SQL
+
+## Task 3 — Signal Intelligence Layer
+
+This stage improves system trust and traceability.
+
+### Features added:
+
+- Dataset lineage using dataset_id
+- Confidence scoring based on dataset source
+- Truth validation for signal values
+- Removal of invalid geospatial data
+
+### Result:
+
+A deterministic, auditable signal intelligence system
