@@ -26,31 +26,40 @@ This system upgrades a basic data pipeline into an **intelligence-ready signal p
 
 * **Confidence Scoring**
 
-  * Confidence is assigned based on dataset origin:
+  * Confidence is assigned using rule-based logic:
 
-    * AIS → High (0.9)
-    * Weather → Medium (0.6)
-    * Water → Low (0.3)
-  * Missing geospatial data results in zero confidence
+    * Base confidence = 0.5
+    * Dataset reliability adjustments:
+      * AIS → +0.3 (high reliability tracking data)
+      * Weather → +0.2 (moderate reliability)
+      * Water → +0.1 (lower reliability due to data gaps)
+
+  * Data quality penalties:
+    * Missing latitude/longitude → -0.5
+
+  * Final confidence is computed deterministically:
+    → confidence = base + adjustments - penalties
 
 * **Truth Validation**
 
-  * Signals are marked valid (`truth_flag = True`) only if:
+  * Signals are marked valid (`truth_flag = TRUE`) only if:
+    * `normalized_value` is present
+    * confidence score is greater than zero
 
-    * Values are present
-    * Confidence is non-zero
   * Invalid signals are explicitly rejected
 
 * **Geospatial Integrity Handling**
 
-  * Records with missing latitude/longitude are removed
-  * No silent data drops — all removals are logged
+  * Records with missing latitude/longitude are explicitly removed during preprocessing
+  * All removals are logged and documented (no silent drops)
 
 * **Deduplication**
 
   * Duplicate signals are removed based on:
-
-    * timestamp, latitude, longitude, feature_type
+    * timestamp
+    * latitude
+    * longitude
+    * feature_type
 
 * **Batch Processing**
 
@@ -64,13 +73,13 @@ The system uses **PostgreSQL** for structured signal storage.
 
 ### Core Tables
 
-* `marine_signals`
+* `marine_signals`  
   Stores validated, normalized, and intelligence-ready signals
 
-* `dataset_registry`
+* `dataset_registry`  
   Maintains dataset-level metadata and lineage
 
-* `ingestion_log`
+* `ingestion_log`  
   Tracks ingestion runs, rejected records, and system status
 
 Indexes are applied on key fields such as timestamp and feature type to support scaling.
@@ -81,7 +90,7 @@ Indexes are applied on key fields such as timestamp and feature type to support 
 
 The ingestion pipeline performs the following steps:
 
-1. Load normalized datasets
+1. Load datasets
 2. Assign dataset-level lineage (`dataset_id`)
 3. Validate records (timestamp, coordinates, values)
 4. Apply confidence scoring logic
