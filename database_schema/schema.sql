@@ -1,3 +1,8 @@
+-- Index for faster queries
+CREATE INDEX idx_dataset_id ON marine_signals(dataset_id);
+CREATE INDEX idx_timestamp ON marine_signals(timestamp);
+CREATE INDEX idx_feature_type ON marine_signals(feature_type);
+
 -- Dataset Registry Table
 CREATE TABLE dataset_registry (
     dataset_id INT PRIMARY KEY,
