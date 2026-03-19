@@ -1,194 +1,90 @@
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point
 from sqlalchemy import create_engine
 from datetime import datetime
 import yaml
 
-
 # -----------------------------------
-# STEP 1 — Load Configuration File
+# STEP 1 — Load Config
 # -----------------------------------
-
 with open("../config/config.yaml") as file:
     config = yaml.safe_load(file)
 
 db = config["database"]
 
-
-# -----------------------------------
-# STEP 2 — Connect to PostgreSQL
-# -----------------------------------
-
 engine = create_engine(
-f"postgresql://{db['user']}:{db['password']}@{db['host']}:{db['port']}/{db['name']}"
+    f"postgresql://{db['user']}:{db['password']}@{db['host']}:{db['port']}/{db['name']}"
 )
 
+print("[INFO] Connected to database")
 
 # -----------------------------------
-# STEP 3 — Load Standardized Datasets
+# STEP 2 — Load Data
 # -----------------------------------
-
 ais = pd.read_csv(config["paths"]["ais_csv"])
 weather = pd.read_csv(config["paths"]["weather_csv"])
 water = pd.read_csv(config["paths"]["water_csv"])
 
-# -----------------------------------
-# STEP 4 — Normalize Schema
-# -----------------------------------
+print(f"[INFO] AIS rows: {len(ais)}")
+print(f"[INFO] Weather rows: {len(weather)}")
+print(f"[INFO] Water rows: {len(water)}")
 
+# -----------------------------------
+# STEP 3 — Add Dataset ID (LINEAGE)
+# -----------------------------------
+ais['dataset_id'] = 1
+weather['dataset_id'] = 2
+water['dataset_id'] = 3
+
+# -----------------------------------
+# STEP 4 — Normalize Columns
+# -----------------------------------
 columns = [
-"source_id",
-"timestamp",
-"latitude",
-"longitude",
-"feature_type",
-"normalized_value",
-"source_reference"
+    "dataset_id",
+    "timestamp",
+    "latitude",
+    "longitude",
+    "feature_type",
+    "normalized_value"
 ]
 
 ais = ais[columns]
 weather = weather[columns]
 water = water[columns]
 
+# -----------------------------------
+# STEP 5 — Merge Data
+# -----------------------------------
+df = pd.concat([ais, weather, water], ignore_index=True)
+print(f"[INFO] Total rows after merge: {len(df)}")
 
 # -----------------------------------
-# STEP 5 — Merge Datasets
+# STEP 6 — Timestamp Fix
 # -----------------------------------
-
-final_pipeline_data = pd.concat(
-    [ais, weather, water],
-    ignore_index=True
-)
-
+df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
 
 # -----------------------------------
-# STEP 6 — Convert Timestamp
+# STEP 7 — VALIDATION
 # -----------------------------------
-
-final_pipeline_data["timestamp"] = pd.to_datetime(
-final_pipeline_data["timestamp"],
-errors="coerce"
-)
-
-
-# -----------------------------------
-# STEP 7 — Validation Rules
-# -----------------------------------
-
-valid_df = final_pipeline_data[
-(final_pipeline_data["latitude"].between(-90,90)) &
-(final_pipeline_data["longitude"].between(-180,180)) &
-(final_pipeline_data["timestamp"].notnull()) &
-(final_pipeline_data["normalized_value"].notnull())
+valid_df = df[
+    (df["latitude"].between(-90, 90)) &
+    (df["longitude"].between(-180, 180)) &
+    (df["timestamp"].notnull()) &
+    (df["normalized_value"].notnull())
 ]
 
-rejected_df = final_pipeline_data.drop(valid_df.index)
+rejected_df = df.drop(valid_df.index)
 
-
-# -----------------------------------
-# STEP 8 — Save Rejected Records
-# -----------------------------------
+print(f"[WARNING] Rejected rows: {len(rejected_df)}")
 
 rejected_df.to_csv(
-"../rejected_records/rejected_records.csv",
-index=False
-)
-
-
-# -----------------------------------
-# STEP 9 — Create Geometry Column
-# -----------------------------------
-
-valid_df = valid_df.copy()
-
-valid_df["geom"] = gpd.points_from_xy(
-valid_df["longitude"],
-valid_df["latitude"]
-)
-
-gdf = gpd.GeoDataFrame(
-valid_df,
-geometry="geom",
-crs="EPSG:4326"
-)
-
-
-# -----------------------------------
-# STEP 10 — Add Signal Metadata
-# -----------------------------------
-
-gdf["truth_level"] = 0
-gdf["confidence_score"] = 0.8
-
-
-# -----------------------------------
-# STEP 11 — Register Dataset
-# -----------------------------------
-
-registry_df = pd.DataFrame([{
-"dataset_id":"UNIFIED_PIPELINE",
-"dataset_name":"AIS + Weather + Hydrology Signals",
-"source":"Multiple Sources",
-"schema_version":"1.0",
-"update_frequency":"Daily",
-"trust_level":"Medium",
-"ingestion_method":"Python Pipeline",
-"last_update_timestamp":datetime.now()
-}])
-
-registry_df.to_sql(
-"dataset_registry",
-engine,
-if_exists="append",
-index=False
-)
-
-
-# -----------------------------------
-# STEP 12 — Insert Signals into DB
-# -----------------------------------
-
-start_time = datetime.now()
-
-gdf.to_sql(
-"marine_signals",
-engine,
-if_exists="append",
-index=False
-)
-
-end_time = datetime.now()
-
-
-# -----------------------------------
-# STEP 13 — Log Ingestion
-# -----------------------------------
-
-log_df = pd.DataFrame([{
-"dataset_id":"UNIFIED_PIPELINE",
-"records_ingested":len(valid_df),
-"records_rejected":len(rejected_df),
-"start_time":start_time,
-"end_time":end_time,
-"status":"SUCCESS",
-"notes":"Unified AIS + Weather + Hydrology ingestion"
-}])
-
-log_df.to_sql(
-"ingestion_log",
-engine,
-if_exists="append",
-index=False
+    "../rejected_records/rejected_records.csv",
+    index=False
 )
 
 # -----------------------------------
-# STEP 14 — Pipeline Completed
+# STEP 8 — CONFIDENCE ENGINE
 # -----------------------------------
-
-print("Pipeline completed successfully")
-
-
 def assign_confidence(df):
     df['confidence_score'] = 0.0
 
@@ -206,5 +102,86 @@ def assign_confidence(df):
 
 def assign_truth(df):
     df['truth_flag'] = True
+
     df.loc[df['normalized_value'].isna(), 'truth_flag'] = False
+    df.loc[df['confidence_score'] == 0.0, 'truth_flag'] = False
+
     return df
+
+
+valid_df = assign_confidence(valid_df)
+valid_df = assign_truth(valid_df)
+
+print("[INFO] Confidence and truth assigned")
+
+# -----------------------------------
+# STEP 9 — DEDUPLICATION
+# -----------------------------------
+before = len(valid_df)
+
+valid_df = valid_df.drop_duplicates(
+    subset=['timestamp', 'latitude', 'longitude', 'feature_type']
+)
+
+after = len(valid_df)
+
+print(f"[INFO] Removed {before - after} duplicate rows")
+
+# -----------------------------------
+# STEP 10 — FINAL COLUMNS
+# -----------------------------------
+valid_df = valid_df[[
+    'dataset_id',
+    'timestamp',
+    'latitude',
+    'longitude',
+    'feature_type',
+    'normalized_value',
+    'confidence_score',
+    'truth_flag'
+]]
+
+# -----------------------------------
+# STEP 11 — BATCH INSERT
+# -----------------------------------
+print("[INFO] Starting batch insert...")
+
+start_time = datetime.now()
+
+batch_size = 5000
+
+for i in range(0, len(valid_df), batch_size):
+    batch = valid_df.iloc[i:i+batch_size]
+
+    batch.to_sql(
+        "marine_signals",
+        engine,
+        if_exists="append",
+        index=False
+    )
+
+    print(f"[INFO] Inserted rows {i} to {i + len(batch)}")
+
+end_time = datetime.now()
+
+# -----------------------------------
+# STEP 12 — LOGGING
+# -----------------------------------
+log_df = pd.DataFrame([{
+    "dataset_id": "MULTI_SOURCE",
+    "records_ingested": len(valid_df),
+    "records_rejected": len(rejected_df),
+    "start_time": start_time,
+    "end_time": end_time,
+    "status": "SUCCESS",
+    "notes": "AIS + Weather + Water ingestion with validation"
+}])
+
+log_df.to_sql(
+    "ingestion_log",
+    engine,
+    if_exists="append",
+    index=False
+)
+
+print("[SUCCESS] Pipeline completed successfully!")
