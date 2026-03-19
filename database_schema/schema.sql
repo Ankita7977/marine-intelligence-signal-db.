@@ -1,8 +1,3 @@
--- Index for faster queries
-CREATE INDEX idx_dataset_id ON marine_signals(dataset_id);
-CREATE INDEX idx_timestamp ON marine_signals(timestamp);
-CREATE INDEX idx_feature_type ON marine_signals(feature_type);
-
 -- Dataset Registry Table
 CREATE TABLE dataset_registry (
     dataset_id INT PRIMARY KEY,
@@ -27,5 +22,10 @@ CREATE TABLE marine_signals (
 );
 
 -- Indexes (SCALING SUPPORT)
-CREATE INDEX idx_timestamp ON marine_signals(timestamp);
-CREATE INDEX idx_feature_type ON marine_signals(feature_type);
+CREATE INDEX idx_marine_dataset_id ON marine_signals(dataset_id);
+CREATE INDEX idx_marine_timestamp ON marine_signals(timestamp);
+CREATE INDEX idx_marine_feature_type ON marine_signals(feature_type);
+
+-- Partitioning Strategy (Future Ready)
+-- Table can be partitioned by:
+-- RANGE (timestamp) OR LIST (feature_type)
