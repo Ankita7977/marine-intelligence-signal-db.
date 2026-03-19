@@ -21,7 +21,17 @@ Confidence is adjusted based on dataset characteristics:
   → EXCLUDED due to missing geospatial data
 
 
-## 3. Data Quality Penalty
+## 3. Dataset Mapping Logic
+
+Dataset adjustments are applied using dataset_id:
+
+- dataset_id = 1 (AIS) → +0.3
+- dataset_id = 2 (Weather) → +0.2
+
+Water dataset is excluded and not processed in pipeline
+
+
+## 4. Data Quality Penalty
 
 If critical fields are missing:
 
@@ -32,17 +42,17 @@ If critical fields are missing:
   → signal considered invalid
 
 
-## 4. Final Confidence Score
+## 5. Final Confidence Score
 
 final_confidence = base + dataset_adjustment - penalties
 
 
-## 5. Confidence Bounds
+## 6. Confidence Bounds
 
 0 ≤ confidence_score ≤ 1
 
 
-## 6. Truth Rules
+## 7. Truth Rules
 
 A signal is considered truthful only if:
 
@@ -55,10 +65,11 @@ Else:
 → truth_flag = FALSE
 
 
-## 7. Key Principle
+## 8. Key Principles
 
 - No hardcoded confidence values
 - Confidence is derived from:
   → data source reliability
   → data completeness
   → validation checks
+- Fully deterministic and reproducible logic
