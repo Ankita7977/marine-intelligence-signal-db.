@@ -51,3 +51,26 @@ end_time TIMESTAMP,
 status TEXT,
 notes TEXT
 );
+
+
+CREATE TABLE dataset_registry (
+    dataset_id INT PRIMARY KEY,
+    dataset_name TEXT,
+    source_type TEXT,
+    description TEXT
+);
+
+CREATE TABLE marine_signals (
+    signal_id SERIAL PRIMARY KEY,
+    dataset_id INT,
+    timestamp TIMESTAMP,
+    latitude FLOAT,
+    longitude FLOAT,
+    feature_type TEXT,
+    normalized_value FLOAT,
+    unit TEXT,
+    confidence_score FLOAT,
+    truth_flag BOOLEAN,
+    FOREIGN KEY (dataset_id) REFERENCES dataset_registry(dataset_id)
+);
+
