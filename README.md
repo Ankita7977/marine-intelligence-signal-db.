@@ -1,51 +1,107 @@
-# Marine Intelligence Signal Database
+# Marine Intelligence Signal System
 
-## Project Overview
+## Overview
 
-The Marine Intelligence Signal Database is a spatial data fabric designed to ingest, normalize, and store heterogeneous maritime and environmental signals.
+The Marine Intelligence Signal System transforms heterogeneous maritime and environmental datasets into a **deterministic, traceable, and intelligence-ready signal layer**.
 
-This system is built using **PostgreSQL and PostGIS** to support geospatial intelligence analysis.
-
-The data fabric ensures that all incoming signals are:
-
-* Structured
-* Validated
-* Traceable
-* Geospatially indexed
-
-The database supports ingestion of multiple datasets including:
-
-* AIS vessel signals
-* Weather signals
-* Hydrology monitoring signals
-
-These signals are stored in a unified schema to enable large-scale marine intelligence analysis.
+The system focuses on **data correctness, transparency, and reproducibility**, ensuring that all signals can be trusted for downstream analysis and simulation.
 
 ---
 
-## Database Architecture
+## Signal Intelligence Layer (Task 3)
 
-The system uses **PostgreSQL with PostGIS** to store spatial signals.
+This system upgrades a basic data pipeline into an **intelligence-ready signal processing system**.
 
-Main tables implemented:
+### Key Capabilities
 
-* `marine_signals` – stores normalized signal data
-* `dataset_registry` – tracks registered datasets
-* `ingestion_log` – records ingestion runs
+* **Dataset Lineage**
 
-A spatial index is implemented on the geometry column to support efficient geospatial queries.
+  * Each signal is linked to its source using `dataset_id`
+  * Eliminates ambiguity from unified pipelines
+
+* **Deterministic Normalization**
+
+  * All transformations use explicit, documented formulas
+  * No assumptions or inferred values are introduced
+
+* **Confidence Scoring**
+
+  * Confidence is assigned based on dataset origin:
+
+    * AIS → High (0.9)
+    * Weather → Medium (0.6)
+    * Water → Low (0.3)
+  * Missing geospatial data results in zero confidence
+
+* **Truth Validation**
+
+  * Signals are marked valid (`truth_flag = True`) only if:
+
+    * Values are present
+    * Confidence is non-zero
+  * Invalid signals are explicitly rejected
+
+* **Geospatial Integrity Handling**
+
+  * Records with missing latitude/longitude are removed
+  * No silent data drops — all removals are logged
+
+* **Deduplication**
+
+  * Duplicate signals are removed based on:
+
+    * timestamp, latitude, longitude, feature_type
+
+* **Batch Processing**
+
+  * Data is inserted in batches for scalability and reliability
 
 ---
 
-## Signal Inventory
+## System Architecture
 
-After ingestion, the database currently contains the following signals:
+The system uses **PostgreSQL** for structured signal storage.
 
-| Feature Type  | Record Count |
-| ------------- | ------------ |
-| vessel_speed  | 1,447,936    |
-| precipitation | 312          |
-| water_level   | 366          |
+### Core Tables
+
+* `marine_signals`
+  Stores validated, normalized, and intelligence-ready signals
+
+* `dataset_registry`
+  Maintains dataset-level metadata and lineage
+
+* `ingestion_log`
+  Tracks ingestion runs, rejected records, and system status
+
+Indexes are applied on key fields such as timestamp and feature type to support scaling.
+
+---
+
+## Ingestion Pipeline
+
+The ingestion pipeline performs the following steps:
+
+1. Load normalized datasets
+2. Assign dataset-level lineage (`dataset_id`)
+3. Validate records (timestamp, coordinates, values)
+4. Apply confidence scoring logic
+5. Apply truth validation rules
+6. Remove duplicate signals
+7. Insert data using batch processing
+8. Log ingestion results
+
+---
+
+## Validation Rules
+
+Strict validation rules are applied before ingestion:
+
+* Latitude must be between **-90 and 90**
+* Longitude must be between **-180 and 180**
+* Timestamp must be valid and non-null
+* `normalized_value` must not be null
+
+Invalid records are explicitly rejected and stored separately.
 
 ---
 
@@ -61,100 +117,46 @@ marine-intelligence-signal-db
 │   └── schema.sql
 │
 ├── docs/
-│   ├── ai_code_review.md
-│   ├── ai_schema_review.md
-│   └── data_authenticity.md
+│   ├── normalization_rules.md
+│   ├── confidence_rules.md
+│   └── llm_reasoning.md
 │
 ├── ingestion_pipeline/
 │   └── ingest_signals.py
 │
-├── notebooks/
-│   └── normalization.ipynb
+├── data/
+│   └── dataset_registry.csv
 │
-├── signal_inventory.md
 └── README.md
 ```
 
 ---
 
-### Explanation
+## System Design Principles
 
-The Marine Intelligence Signal Database currently stores signals from multiple maritime and environmental sources.
+This system is built with a strong emphasis on **data integrity and transparency**:
 
-The ingested signals include:
-
-* **AIS vessel movement signals** represented by `vessel_speed`
-* **Weather observations** represented by `precipitation`
-* **Hydrology monitoring signals** represented by `water_level`
-
-The AIS vessel dataset forms the largest portion of the database, containing over 1.4 million vessel movement records.
-
-Environmental datasets provide additional contextual signals that can support marine intelligence analysis.
+* No assumptions are made where data is ambiguous
+* No missing values are artificially filled
+* All transformations are explicitly documented
+* All signals remain traceable to their source
+* Invalid data is never silently ignored
 
 ---
 
-## Ingestion Pipeline
+## Outcome
 
-The ingestion pipeline performs the following steps:
+The system produces:
 
-1. Load raw datasets
-2. Normalize dataset schema
-3. Validate signal records
-4. Generate spatial geometry
-5. Insert records into the PostGIS database
-6. Log ingestion results
-
-The pipeline supports AIS vessel, weather, and hydrology datasets.
-
----
-
-## Validation Rules
-
-Before inserting records into the database, validation rules are applied:
-
-* Latitude must be between **-90 and 90**
-* Longitude must be between **-180 and 180**
-* Timestamp must follow **ISO format**
-* `normalized_value` must not be null
-
-Invalid records are stored separately and counted in the ingestion log.
-
----
-
-## AI-Assisted Engineering
-
-AI tools were used to review the database schema and ingestion pipeline.
-
-The AI review helped identify improvements in:
-
-* data validation
-* ingestion logging
-* schema reliability
-* reproducibility of the pipeline
-
-Documentation of AI-assisted reviews is available in the `docs/` folder.
+* **Traceable signals** — every record linked to a dataset
+* **Validated signals** — incorrect data is filtered out
+* **Deterministic outputs** — no randomness or hidden logic
+* **Simulation-ready data** — usable for downstream systems
 
 ---
 
 ## Technologies Used
 
 * PostgreSQL
-* PostGIS
 * Python
 * Pandas
-* Geospatial SQL
-
-## Task 3 — Signal Intelligence Layer
-
-This stage improves system trust and traceability.
-
-### Features added:
-
-- Dataset lineage using dataset_id
-- Confidence scoring based on dataset source
-- Truth validation for signal values
-- Removal of invalid geospatial data
-
-### Result:
-
-A deterministic, auditable signal intelligence system
