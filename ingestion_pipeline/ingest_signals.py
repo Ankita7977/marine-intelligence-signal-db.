@@ -182,9 +182,29 @@ if_exists="append",
 index=False
 )
 
-
 # -----------------------------------
 # STEP 14 — Pipeline Completed
 # -----------------------------------
 
 print("Pipeline completed successfully")
+
+
+def assign_confidence(df):
+    df['confidence_score'] = 0.0
+
+    df.loc[df['dataset_id'] == 1, 'confidence_score'] = 0.9
+    df.loc[df['dataset_id'] == 2, 'confidence_score'] = 0.6
+    df.loc[df['dataset_id'] == 3, 'confidence_score'] = 0.3
+
+    df.loc[
+        df['latitude'].isna() | df['longitude'].isna(),
+        'confidence_score'
+    ] = 0.0
+
+    return df
+
+
+def assign_truth(df):
+    df['truth_flag'] = True
+    df.loc[df['normalized_value'].isna(), 'truth_flag'] = False
+    return df
