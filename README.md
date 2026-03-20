@@ -177,23 +177,23 @@ Invalid records are stored separately for transparency.
 
 ## Project Structure
 
-marine-intelligence-signal-db
+marine-intelligence-signal-db/
 │
 ├── config/
 │   └── config.yaml
+│
+├── data/
+│   └── dataset_registry.csv
 │
 ├── database_schema/
 │   └── schema.sql
 │
 ├── docs/
 │   ├── normalization_rules.md
-│   ├── confidence_rules.md
+│   └── confidence_rules.md
 │
 ├── ingestion_pipeline/
 │   └── ingest_signals.py
-│
-├── data/
-│   └── dataset_registry.csv
 │
 └── README.md
 
