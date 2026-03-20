@@ -189,8 +189,8 @@ marine-intelligence-signal-db/
 │   └── schema.sql
 │
 ├── docs/
-│   ├── normalization_rules.md
-│   └── confidence_rules.md
+│   ├── confidence_rules.md 
+│   └── normalization_rules.md
 │
 ├── ingestion_pipeline/
 │   └── ingest_signals.py
