@@ -7,7 +7,7 @@
 - Normalized Column: normalized_value
 - Raw Unit: Knots
 - Normalized Unit: m/s
-
+ 
 - Transformation:
   normalized_value = speed_knots * 0.514444
 
