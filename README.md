@@ -1,4 +1,4 @@
-# Marine Intelligence Signal System
+# Marine Intelligence Signal System (Task 3)
 
 ## Overview
 
@@ -6,10 +6,29 @@ This project focuses on building a reliable signal processing system for marine 
 
 The goal is to take different types of maritime and environmental datasets and convert them into a clean, consistent, and trustworthy signal layer that can be used for further analysis or simulation.
 
-Instead of just storing data, the system ensures that every signal is:
+Instead of just storing data, this system ensures that every signal is:
 - properly validated  
 - traceable to its source  
-- transformed using clear rules  
+- transformed using clearly defined rules  
+
+---
+
+## Task Context
+
+This project is part of the Marine Intelligence pipeline development.
+
+In Task 2:
+- Data was stored in a unified schema  
+- A basic ingestion pipeline was implemented  
+
+In Task 3:
+- True normalization logic is implemented  
+- Dataset lineage is enforced using dataset_id  
+- Confidence scoring is rule-based (not hardcoded)  
+- Geospatial integrity issues are handled explicitly  
+
+This upgrade ensures that the system is no longer just a data storage layer,  
+but an intelligence-ready signal processing system.
 
 ---
 
@@ -31,7 +50,7 @@ This system addresses those issues by:
 
 ### 1. Dataset Lineage
 
-Each signal is linked to its source using `dataset_id`.
+Each signal is linked to its source using dataset_id.
 
 This ensures:
 - no confusion between datasets  
@@ -43,8 +62,7 @@ This ensures:
 
 All transformations are clearly defined and documented.
 
-Example:
-AIS vessel speed is converted from knots to meters per second using:
+Example (AIS speed conversion):
 
 speed_mps = speed_knots * 0.514444
 
@@ -65,13 +83,14 @@ Confidence is calculated using a rule-based approach:
   - Missing latitude/longitude → -0.5  
 
 Final confidence:
+
 confidence = base + adjustments - penalties
 
 ---
 
 ### 4. Truth Validation
 
-Each signal is marked as valid (`truth_flag = TRUE`) only if:
+Each signal is marked as valid (truth_flag = TRUE) only if:
 - value is present  
 - timestamp is valid  
 - confidence score is greater than zero  
@@ -88,8 +107,12 @@ Geospatial data is critical for marine intelligence.
 - These removals are logged  
 - No data is silently dropped  
 
-Note:  
-The water dataset was excluded completely because it did not contain valid geospatial information.
+Water Dataset Handling:
+
+The water dataset was completely excluded from ingestion because all records were missing latitude and longitude.
+
+This decision was made to maintain strict geospatial integrity,  
+as signals without coordinates cannot be used in spatial analysis.
 
 ---
 
@@ -116,10 +139,10 @@ The system uses PostgreSQL with PostGIS for storing signals.
 ### Main Tables
 
 - marine_signals → stores processed and validated signals  
-- dataset_registry → maintains dataset metadata  
+- dataset_registry → maintains dataset metadata and lineage  
 - ingestion_log → tracks ingestion runs  
 
-Geospatial data is stored using POINT geometry (PostGIS), enabling efficient spatial queries.
+Geospatial data is stored using POINT geometry, enabling efficient spatial queries.
 
 ---
 
@@ -133,9 +156,9 @@ The pipeline performs the following steps:
 4. Validate records  
 5. Assign confidence scores  
 6. Apply truth validation  
-7. Remove duplicates  
+7. Remove duplicate records  
 8. Insert data in batches  
-9. Log results  
+9. Log ingestion results  
 
 ---
 
@@ -154,33 +177,33 @@ Invalid records are stored separately for transparency.
 
 ## Project Structure
 
-marine-intelligence-signal-db  
-│  
-├── config/  
-│   └── config.yaml  
-│  
-├── database_schema/  
-│   └── schema.sql  
-│  
-├── docs/  
-│   ├── normalization_rules.md  
-│   ├── confidence_rules.md  
-│  
-├── ingestion_pipeline/  
-│   └── ingest_signals.py  
-│  
-├── data/  
-│   └── dataset_registry.csv  
-│  
-└── README.md  
+marine-intelligence-signal-db
+│
+├── config/
+│   └── config.yaml
+│
+├── database_schema/
+│   └── schema.sql
+│
+├── docs/
+│   ├── normalization_rules.md
+│   ├── confidence_rules.md
+│
+├── ingestion_pipeline/
+│   └── ingest_signals.py
+│
+├── data/
+│   └── dataset_registry.csv
+│
+└── README.md
 
 ---
 
 ## Design Approach
 
-This system is built with a simple principle:
+This system is built on a simple principle:
 
-Do not assume anything about the data unless it is clearly defined.
+Do not assume anything about the data unless it is explicitly defined.
 
 So:
 - no fake values are added  
@@ -199,9 +222,9 @@ Everything is:
 The system produces:
 - clean and validated signals  
 - fully traceable records  
-- consistent outputs  
+- deterministic outputs  
 
-These signals can be directly used for:
+These signals are ready to be used for:
 - analysis  
 - modeling  
 - simulation systems  
