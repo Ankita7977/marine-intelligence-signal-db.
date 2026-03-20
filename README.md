@@ -179,9 +179,6 @@ Invalid records are stored separately for transparency.
 ```
 marine-intelligence-signal-db/
 │
-├── config/
-│   └── config.yaml
-│
 ├── data/
 │   └── dataset_registry.csv
 │
