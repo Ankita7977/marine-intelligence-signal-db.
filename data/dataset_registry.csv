@@ -1,0 +1,4 @@
+dataset_id,dataset_name,source_type,description
+1,AIS,sensor,Vessel tracking data (AIS signals)
+2,Weather,environmental,Weather observations dataset
+3,Water,sensor,Hydrology dataset (excluded from system due to missing geospatial data)
