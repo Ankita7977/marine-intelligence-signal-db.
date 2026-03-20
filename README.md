@@ -176,7 +176,7 @@ Invalid records are stored separately for transparency.
 ---
 
 ## Project Structure
-
+```
 marine-intelligence-signal-db/
 │
 ├── config/
@@ -196,7 +196,7 @@ marine-intelligence-signal-db/
 │   └── ingest_signals.py
 │
 └── README.md
-
+```
 ---
 
 ## Design Approach
