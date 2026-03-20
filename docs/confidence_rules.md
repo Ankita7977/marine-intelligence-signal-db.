@@ -2,7 +2,7 @@
 
 ## 1. Base Confidence
 
-All signals start with a base confidence score:
+All signals start with a base confidence score: 
 
 → base = 0.5
 
