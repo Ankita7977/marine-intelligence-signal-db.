@@ -36,7 +36,19 @@ weather['dataset_id'] = 2
 water['dataset_id'] = 3
 
 # -----------------------------------
-# STEP 4 — GEOSPATIAL CLEANING (WATER)
+# STEP 4 — AIS NORMALIZATION (REAL)
+# -----------------------------------
+# knots → m/s
+ais['normalized_value'] = ais['normalized_value'] * 0.514444
+ais['unit'] = 'm/s'
+
+# -----------------------------------
+# STEP 5 — WEATHER HANDLING
+# -----------------------------------
+weather['unit'] = 'unknown'
+
+# -----------------------------------
+# STEP 6 — WATER GEOSPATIAL CHECK (EXCLUDE)
 # -----------------------------------
 water_before = len(water)
 water = water.dropna(subset=['latitude', 'longitude'])
@@ -45,10 +57,10 @@ water_after = len(water)
 print(f"[WARNING] Removed {water_before - water_after} invalid water rows")
 
 if water.empty:
-    print("[CRITICAL] Water dataset removed due to missing geospatial data")
+    print("[CRITICAL] Water dataset excluded due to missing geospatial data")
 
 # -----------------------------------
-# STEP 5 — SELECT REQUIRED COLUMNS
+# STEP 7 — SELECT REQUIRED COLUMNS
 # -----------------------------------
 columns = [
     "dataset_id",
@@ -56,26 +68,25 @@ columns = [
     "latitude",
     "longitude",
     "feature_type",
-    "normalized_value"
+    "normalized_value",
+    "unit"
 ]
 
 ais = ais[columns]
 weather = weather[columns]
-water = water[columns]
 
-# -----------------------------------
-# STEP 6 — MERGE DATA
-# -----------------------------------
-df = pd.concat([ais, weather, water], ignore_index=True)
+# ❗ WATER EXCLUDED (Task 3 requirement)
+df = pd.concat([ais, weather], ignore_index=True)
+
 print(f"[INFO] Total rows after merge: {len(df)}")
 
 # -----------------------------------
-# STEP 7 — TIMESTAMP FIX
+# STEP 8 — TIMESTAMP FIX
 # -----------------------------------
 df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
 
 # -----------------------------------
-# STEP 8 — VALIDATION
+# STEP 9 — VALIDATION
 # -----------------------------------
 valid_df = df[
     (df["latitude"].between(-90, 90)) &
@@ -94,21 +105,23 @@ rejected_df.to_csv(
 )
 
 # -----------------------------------
-# STEP 9 — CONFIDENCE ENGINE (RULE-BASED)
+# STEP 10 — CONFIDENCE ENGINE
 # -----------------------------------
 def assign_confidence(df):
     df['confidence_score'] = 0.5  # base
 
-    # dataset reliability adjustment
-    df.loc[df['dataset_id'] == 1, 'confidence_score'] += 0.3
-    df.loc[df['dataset_id'] == 2, 'confidence_score'] += 0.2
-    df.loc[df['dataset_id'] == 3, 'confidence_score'] += 0.1
+    # dataset adjustment
+    df.loc[df['dataset_id'] == 1, 'confidence_score'] += 0.3  # AIS
+    df.loc[df['dataset_id'] == 2, 'confidence_score'] += 0.2  # Weather
 
-    # penalty for missing geo
+    # penalty
     df.loc[
         df['latitude'].isna() | df['longitude'].isna(),
         'confidence_score'
     ] -= 0.5
+
+    # bounds
+    df['confidence_score'] = df['confidence_score'].clip(0, 1)
 
     return df
 
@@ -117,7 +130,8 @@ def assign_truth(df):
     df['truth_flag'] = True
 
     df.loc[df['normalized_value'].isna(), 'truth_flag'] = False
-    df.loc[df['confidence_score'] <= 0.0, 'truth_flag'] = False
+    df.loc[df['timestamp'].isna(), 'truth_flag'] = False
+    df.loc[df['confidence_score'] <= 0, 'truth_flag'] = False
 
     return df
 
@@ -128,7 +142,7 @@ valid_df = assign_truth(valid_df)
 print("[INFO] Confidence and truth assigned")
 
 # -----------------------------------
-# STEP 10 — DEDUPLICATION
+# STEP 11 — DEDUPLICATION
 # -----------------------------------
 before = len(valid_df)
 
@@ -141,18 +155,22 @@ after = len(valid_df)
 print(f"[INFO] Removed {before - after} duplicate rows")
 
 # -----------------------------------
-# STEP 11 — ADD UNIT COLUMN
+# STEP 12 — GEOMETRY COLUMN (PostGIS)
 # -----------------------------------
-valid_df['unit'] = 'unknown'
+valid_df['geom'] = valid_df.apply(
+    lambda row: f"POINT({row['longitude']} {row['latitude']})",
+    axis=1
+)
 
 # -----------------------------------
-# STEP 12 — FINAL COLUMNS
+# STEP 13 — FINAL COLUMNS
 # -----------------------------------
 valid_df = valid_df[[
     'dataset_id',
     'timestamp',
     'latitude',
     'longitude',
+    'geom',
     'feature_type',
     'normalized_value',
     'unit',
@@ -161,7 +179,7 @@ valid_df = valid_df[[
 ]]
 
 # -----------------------------------
-# STEP 13 — BATCH INSERT
+# STEP 14 — BATCH INSERT
 # -----------------------------------
 print("[INFO] Starting batch insert...")
 
@@ -176,7 +194,8 @@ for i in range(0, len(valid_df), batch_size):
         "marine_signals",
         engine,
         if_exists="append",
-        index=False
+        index=False,
+        method="multi"
     )
 
     print(f"[INFO] Inserted rows {i} to {i + len(batch)}")
@@ -184,7 +203,7 @@ for i in range(0, len(valid_df), batch_size):
 end_time = datetime.now()
 
 # -----------------------------------
-# STEP 14 — LOGGING
+# STEP 15 — LOGGING
 # -----------------------------------
 log_df = pd.DataFrame([{
     "dataset_id": None,
@@ -193,14 +212,15 @@ log_df = pd.DataFrame([{
     "start_time": start_time,
     "end_time": end_time,
     "status": "SUCCESS",
-    "notes": "Multi-dataset ingestion with validation and confidence scoring"
+    "notes": "AIS + Weather ingestion with normalization, validation, and confidence scoring"
 }])
 
 log_df.to_sql(
     "ingestion_log",
     engine,
     if_exists="append",
-    index=False
+    index=False,
+    method="multi"
 )
 
 print("[SUCCESS] Pipeline completed successfully!")
