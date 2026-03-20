@@ -36,7 +36,7 @@ weather['dataset_id'] = 2
 water['dataset_id'] = 3
 
 # -----------------------------------
-# STEP 4 — AIS NORMALIZATION (REAL)
+# STEP 4 — AIS NORMALIZATION
 # -----------------------------------
 # knots → m/s
 ais['normalized_value'] = ais['normalized_value'] * 0.514444
@@ -48,7 +48,7 @@ ais['unit'] = 'm/s'
 weather['unit'] = 'unknown'
 
 # -----------------------------------
-# STEP 6 — WATER GEOSPATIAL CHECK (EXCLUDE)
+# STEP 6 — WATER GEOSPATIAL VALIDATION
 # -----------------------------------
 water_before = len(water)
 water = water.dropna(subset=['latitude', 'longitude'])
@@ -75,7 +75,7 @@ columns = [
 ais = ais[columns]
 weather = weather[columns]
 
-# ❗ WATER EXCLUDED (Task 3 requirement)
+# ❗ Water excluded (Task requirement)
 df = pd.concat([ais, weather], ignore_index=True)
 
 print(f"[INFO] Total rows after merge: {len(df)}")
@@ -155,22 +155,13 @@ after = len(valid_df)
 print(f"[INFO] Removed {before - after} duplicate rows")
 
 # -----------------------------------
-# STEP 12 — GEOMETRY COLUMN (PostGIS)
-# -----------------------------------
-valid_df['geom'] = valid_df.apply(
-    lambda row: f"POINT({row['longitude']} {row['latitude']})",
-    axis=1
-)
-
-# -----------------------------------
-# STEP 13 — FINAL COLUMNS
+# STEP 12 — FINAL COLUMNS
 # -----------------------------------
 valid_df = valid_df[[
     'dataset_id',
     'timestamp',
     'latitude',
     'longitude',
-    'geom',
     'feature_type',
     'normalized_value',
     'unit',
@@ -179,12 +170,11 @@ valid_df = valid_df[[
 ]]
 
 # -----------------------------------
-# STEP 14 — BATCH INSERT
+# STEP 13 — BATCH INSERT
 # -----------------------------------
 print("[INFO] Starting batch insert...")
 
 start_time = datetime.now()
-
 batch_size = 5000
 
 for i in range(0, len(valid_df), batch_size):
@@ -203,7 +193,7 @@ for i in range(0, len(valid_df), batch_size):
 end_time = datetime.now()
 
 # -----------------------------------
-# STEP 15 — LOGGING
+# STEP 14 — LOGGING
 # -----------------------------------
 log_df = pd.DataFrame([{
     "dataset_id": None,
